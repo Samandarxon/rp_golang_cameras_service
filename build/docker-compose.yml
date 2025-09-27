@@ -9,12 +9,19 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 1234
       POSTGRES_DB: sale_db
+      POSTGRES_HOST_AUTH_METHOD: trust  # Qo'shimcha xavfsizlik
     ports:
-      - "5434:5432"  # 5433 o'rniga 5434
+      - "5434:5432" # 5433 o'rniga 5434
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - sale-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   # Redis
   redis:
@@ -49,18 +56,19 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"  # Avtomatik topic yaratish
       KAFKA_LOG_RETENTION_HOURS: 24
+      KAFKA_NUM_PARTITIONS: 3  # Default partition soni
     ports:
-      - "9093:9093"  # Host uchun alohida port
+      - "9093:9093"
     networks:
       - sale-network
     healthcheck:
-      test: ["CMD", "kafka-topics.sh", "--list", "--bootstrap-server", "kafka:9092"]
+      test: ["CMD", "bash", "-c", "echo 'ruok' | nc localhost 9092 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
-
+      
   # Kafka UI
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
