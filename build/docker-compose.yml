@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: sale-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: sale_db
+    ports:
+      - "5434:5432"  # 5433 o'rniga 5434
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sale-network
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: sale-redis
+    ports:
+      - "6380:6379"
+    networks:
+      - sale-network
+
+  # Zookeeper (Kafka uchun)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - sale-network
+
+  # Kafka - MUHIM O'ZGARTIRISHLAR
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: sale-kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 24
+    ports:
+      - "9093:9093"  # Host uchun alohida port
+    networks:
+      - sale-network
+    healthcheck:
+      test: ["CMD", "kafka-topics.sh", "--list", "--bootstrap-server", "kafka:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Kafka UI
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: sale-kafka-ui
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    ports:
+      - "8082:8080"
+    networks:
+      - sale-network
+
+  # Sale Service
+  sale-service:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile
+    container_name: sale-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8080:8080"    # HTTP server port
+      - "50051:50051"  # gRPC server port
+    environment:
+      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_TOPIC=product-events
+      - KAFKA_GROUP_ID=sale-service-group
+    volumes:
+      - ../config:/app/config
+    networks:
+      - sale-network
+
+networks:
+  sale-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

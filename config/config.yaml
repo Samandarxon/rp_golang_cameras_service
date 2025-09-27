@@ -1,0 +1,42 @@
+# config/config.yaml
+service_name: "sale-service"
+version: "1.0.0"
+environment: "development"
+
+http:
+  port: ":8080"
+  read_timeout: 15s
+  write_timeout: 15s
+
+grpc:
+  port: ":50051"
+
+database:
+  host: "postgres"
+  port: "5432"
+  user: "postgres"
+  password: "1234"
+  db_name: "sale_db"
+  ssl_mode: "disable"
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: 5
+
+redis:
+  host: "redis"
+  port: "6379"
+  password: ""
+  db: 0
+
+kafka:
+  brokers:
+    - "kafka:9092"  # Docker tarmog'idagi service nomi
+  topic: "product-events"
+  group_id: "sale-service-group"
+
+logger:
+  level: "debug"
+  file_path: ""
+  max_size: 100
+  max_backups: 3
+  max_age: 7

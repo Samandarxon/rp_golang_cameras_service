@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package product;
+
+option go_package = "sale-service/api/proto/product";
+
+import "google/protobuf/wrappers.proto";
+
+// Product service ta'rifi
+service ProductService {
+  // Yangi mahsulot yaratish
+  rpc CreateProduct(CreateProductRequest) returns (Product);
+  
+  // Mahsulotni olish
+  rpc GetProduct(GetProductRequest) returns (Product);
+  
+  // Mahsulotni yangilash
+  rpc UpdateProduct(UpdateProductRequest) returns (Product);
+  
+  // Mahsulotni o'chirish
+  rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse);
+  
+  // Mahsulotlar ro'yxati
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+}
+
+// Product modeli
+message Product {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  double price = 4;
+  int32 quantity = 5;
+  string category_id = 6;
+  bool is_active = 7;
+  int64 created_at = 8;
+  int64 updated_at = 9;
+}
+
+// Yangi mahsulot yaratish so'rovi
+message CreateProductRequest {
+  string name = 1;
+  string description = 2;
+  double price = 3;
+  int32 quantity = 4;
+  string category_id = 5;
+}
+
+// Mahsulotni olish so'rovi
+message GetProductRequest {
+  string id = 1;
+}
+
+// Mahsulotni yangilash so'rovi
+message UpdateProductRequest {
+  string id = 1;
+  google.protobuf.StringValue name = 2;
+  google.protobuf.StringValue description = 3;
+  google.protobuf.DoubleValue price = 4;
+  google.protobuf.Int32Value quantity = 5;
+}
+
+// Mahsulotni o'chirish so'rovi
+message DeleteProductRequest {
+  string id = 1;
+}
+
+// O'chirish javobi
+message DeleteProductResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Ro'yxat olish so'rovi
+message ListProductsRequest {
+  int32 page = 1;
+  int32 limit = 2;
+  string search = 3;
+  string category = 4;
+  string sort_by = 5;
+  string sort_order = 6;
+}
+
+// Ro'yxat javobi
+message ListProductsResponse {
+  repeated Product products = 1;
+  int64 total_count = 2;
+  int32 page = 3;
+  int32 limit = 4;
+  int32 total_pages = 5;
+}
