@@ -68,17 +68,17 @@ func main() {
 	defer redisCache.Close()
 	log.Info("✅ Redis cache muvaffaqiyatli ulandi")
 
-	// 5. REPOSITORY VA USECASE LARNI YARATISH
-	// Repository - DB bilan ishlaydi
-	// UseCase - business logika
-	productRepo := postgres.NewProductRepository(db, log)
-	productUC := product.NewProductUseCase(productRepo, redisCache, log)
-
-	// 6. WEBSOCKET HUB NI YARATISH
+	// 5. WEBSOCKET HUB NI YARATISH
 	// Real-time ma'lumot uzatish uchun WebSocket hub
 	wsHub := hub.NewHub(log)
 	go wsHub.Run() // Hub ni alohida goroutine da ishga tushirish
 	log.Info("✅ WebSocket Hub ishga tushdi")
+
+	// 6. REPOSITORY VA USECASE LARNI YARATISH
+	// Repository - DB bilan ishlaydi
+	// UseCase - business logika
+	productRepo := postgres.NewProductRepository(db, wsHub, log)
+	productUC := product.NewProductUseCase(productRepo, redisCache, log)
 
 	// 7. KAFKA CONSUMER NI ISHGA TUSHIRISH
 	// Kafka dan kelgan xabarlarni qabul qilish va qayta ishlash
@@ -146,12 +146,7 @@ func main() {
 }
 
 // setupGinRouter - Gin routerini sozlash
-func setupGinRouter(
-	cfg *config.Config,
-	productUC product.UseCase,
-	wsHub *hub.Hub,
-	log *zap.Logger,
-) *gin.Engine {
+func setupGinRouter(cfg *config.Config, productUC product.UseCase, wsHub *hub.Hub, log *zap.Logger) *gin.Engine {
 	// Production rejimda ishlatish uchun
 	if cfg.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -176,6 +171,7 @@ func setupGinRouter(
 		productHandler := httpHandler.NewProductHandler(productUC, log)
 		products := v1.Group("/products")
 		{
+			products.GET("/all", productHandler.ListAll)   // Barcha mahsulotlar
 			products.GET("", productHandler.List)          // Barcha mahsulotlar
 			products.GET("/:id", productHandler.GetByID)   // Bitta mahsulot
 			products.POST("", productHandler.Create)       // Yangi mahsulot

@@ -30,6 +30,9 @@ func NewProductUseCase(repo Repository, cache cache.Cache, logger *zap.Logger) U
 
 // Create - Yangi mahsulot yaratish
 func (uc *productUseCase) Create(ctx context.Context, req *entity.CreateProductRequest) (*entity.Product, error) {
+
+	uc.logger.Info("🔄 UseCase: Yangi mahsulot yaratish boshlandi")
+
 	// 1. Yangi Product obyekti yaratish
 	product := &entity.Product{
 		ID:          uuid.New().String(), // Yangi UUID yaratish
@@ -42,6 +45,8 @@ func (uc *productUseCase) Create(ctx context.Context, req *entity.CreateProductR
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
+
+	uc.logger.Info("📦 UseCase: Repository ga saqlash uchun yuborilmoqda")
 
 	// 2. Database ga saqlash
 	if err := uc.repo.Create(ctx, product); err != nil {
@@ -63,6 +68,8 @@ func (uc *productUseCase) Create(ctx context.Context, req *entity.CreateProductR
 		zap.String("product_id", product.ID),
 		zap.String("product_name", product.Name),
 	)
+
+	uc.logger.Info("✅ UseCase: Mahsulot muvaffaqiyatli yaratildi")
 
 	return product, nil
 }
@@ -207,6 +214,23 @@ func (uc *productUseCase) List(ctx context.Context, req *entity.ListProductsRequ
 		Page:       req.Page,
 		Limit:      req.Limit,
 		TotalPages: totalPages,
+	}
+
+	return response, nil
+}
+
+// List - Mahsulotlar ro'yxatini olish
+func (uc *productUseCase) ListAll(ctx context.Context) (*entity.ListProductsResponse, error) {
+	// Database dan ro'yxat olish
+	products, totalCount, err := uc.repo.ListAll(ctx)
+	if err != nil {
+		uc.logger.Error("Mahsulotlar ro'yxatini olishda xatolik", zap.Error(err))
+		return nil, errors.Wrap(err, "mahsulotlar ro'yxatini olib bo'lmadi")
+	}
+
+	response := &entity.ListProductsResponse{
+		Products:   products,
+		TotalCount: totalCount,
 	}
 
 	return response, nil

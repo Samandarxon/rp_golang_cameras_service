@@ -1,0 +1,78 @@
+stages:
+  - deps
+  - lint
+  - test
+  - build
+  - docker
+
+variables:
+  POSTGRES_DB: sale_db
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  DB_URL: postgres://postgres:postgres@postgres:5432/sale_db?sslmode=disable
+
+services:
+  - name: postgres:15
+    alias: postgres
+  - name: confluentinc/cp-kafka:7.5.0
+    alias: kafka
+
+before_script:
+  - apt-get update -y && apt-get install -y make curl
+  - go version || true
+
+deps:
+  stage: deps
+  image: golang:1.22
+  script:
+    - make deps
+  artifacts:
+    paths:
+      - go.sum
+      - go.mod
+
+lint:
+  stage: lint
+  image: golang:1.22
+  script:
+    - make check
+
+test:
+  stage: test
+  image: golang:1.22
+  script:
+    - make migrate-up
+    - make test-cover
+  artifacts:
+    when: always
+    paths:
+      - coverage.html
+      - coverage.out
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.out
+
+build:
+  stage: build
+  image: golang:1.22
+  script:
+    - make build
+  artifacts:
+    paths:
+      - bin/sale-service
+
+docker:
+  stage: docker
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_DRIVER: overlay2
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
+    - make docker-build
+    - docker tag sale-service:latest $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker tag sale-service:latest $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:latest

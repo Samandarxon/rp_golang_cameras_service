@@ -158,3 +158,23 @@ func (h *productHandler) List(c *gin.Context) {
 
 	c.JSON(http.StatusOK, utils.SuccessResponse("Mahsulotlar ro'yxati", response))
 }
+
+// ListAll - Mahsulotlar ro'yxatini olish
+// @Summary Mahsulotlar ro'yxati
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Success 200 {object} entity.ListAllProductsResponse
+// @Router /api/v1/products/all [get]
+func (h *productHandler) ListAll(c *gin.Context) {
+
+	// Use case orqali ro'yxatni olish
+	response, err := h.productUC.ListAll(c.Request.Context())
+	if err != nil {
+		h.logger.Error("Ro'yxatni olishda xatolik", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse("Ro'yxatni olishda xatolik", err))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse("Mahsulotlar ro'yxati", response))
+}

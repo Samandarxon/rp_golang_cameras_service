@@ -106,12 +106,7 @@ type Statistics struct {
 }
 
 // NewKafkaConsumer - Yangi Kafka consumer yaratish
-func NewKafkaConsumer(
-	cfg config.KafkaConfig,
-	productUC product.UseCase,
-	wsHub *hub.Hub,
-	logger *zap.Logger,
-) *KafkaConsumer {
+func NewKafkaConsumer(cfg config.KafkaConfig, productUC product.UseCase, wsHub *hub.Hub, logger *zap.Logger) *KafkaConsumer {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// Default sozlamalar

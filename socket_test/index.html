@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Mahsulotlar Tizimi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 0;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 35px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            color: #1e293b;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f1f5f9;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .status-container {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #f8fafc;
+            transition: background 0.3s ease;
+        }
+
+        .status-item:hover {
+            background: #f1f5f9;
+        }
+
+        .status-checkbox {
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+            accent-color: #10b981;
+        }
+
+        .status-label {
+            font-weight: 500;
+            font-size: 1.1rem;
+        }
+
+        .status-label.connected {
+            color: #10b981;
+        }
+
+        .status-label.disconnected {
+            color: #ef4444;
+        }
+
+        .notifications {
+            max-height: 350px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .notifications::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .notifications::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+
+        .notifications::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .notification-item {
+            padding: 14px;
+            border-left: 4px solid #3b82f6;
+            background-color: #f8fafc;
+            margin-bottom: 12px;
+            border-radius: 0 8px 8px 0;
+            animation: fadeIn 0.5s ease;
+            transition: all 0.3s ease;
+        }
+
+        .notification-item:hover {
+            transform: translateX(5px);
+        }
+
+        .notification-item.error {
+            border-left-color: #ef4444;
+            background-color: #fef2f2;
+        }
+
+        .notification-item.success {
+            border-left-color: #10b981;
+            background-color: #f0fdf4;
+        }
+
+        .notification-item.warning {
+            border-left-color: #f59e0b;
+            background-color: #fffbeb;
+        }
+
+        .notification-item.info {
+            border-left-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .products-container {
+            margin-top: 25px;
+        }
+
+        .products-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .products-count {
+            background: #3b82f6;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            border-top: 4px solid #3b82f6;
+            animation: slideIn 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        }
+
+        .product-card.new {
+            border-top-color: #10b981;
+            animation: highlight 2s ease;
+        }
+
+        .product-card.updated {
+            border-top-color: #f59e0b;
+        }
+
+        .product-card.deleted {
+            border-top-color: #ef4444;
+            opacity: 0.7;
+        }
+
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .product-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1e293b;
+            line-height: 1.3;
+        }
+
+        .product-price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #10b981;
+        }
+
+        .product-description {
+            color: #64748b;
+            margin-bottom: 18px;
+            line-height: 1.5;
+        }
+
+        .product-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.95rem;
+            color: #94a3b8;
+        }
+
+        .product-quantity {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .product-category {
+            background-color: #e0e7ff;
+            color: #4f46e5;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .product-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #f1f5f9;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .product-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-new {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-updated {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+            grid-column: 1 / -1;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #475569;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .connection-status.connected {
+            background-color: #f0fdf4;
+            color: #10b981;
+            border: 1px solid #bbf7d0;
+        }
+
+        .connection-status.disconnected {
+            background-color: #fef2f2;
+            color: #ef4444;
+            border: 1px solid #fecaca;
+        }
+
+        .connection-status.connecting {
+            background-color: #fffbeb;
+            color: #f59e0b;
+            border: 1px solid #fed7aa;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .connected .status-indicator {
+            background-color: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        .disconnected .status-indicator {
+            background-color: #ef4444;
+        }
+
+        .connecting .status-indicator {
+            background-color: #f59e0b;
+            animation: pulse 1s infinite;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f4f6;
+            border-radius: 50%;
+            border-top-color: #3b82f6;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes highlight {
+            0% {
+                background-color: rgba(16, 185, 129, 0.1);
+            }
+
+            100% {
+                background-color: white;
+            }
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 25px;
+            color: #64748b;
+            font-size: 0.95rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Real-time Mahsulotlar Tizimi</h1>
+            <p class="subtitle">WebSocket orqali yangi ma'lumotlarni real vaqtda kuzatish</p>
+        </header>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="totalProducts">0</div>
+                <div class="stat-label">Jami Mahsulotlar</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="activeConnections">0</div>
+                <div class="stat-label">Faol Ulanishlar</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalNotifications">0</div>
+                <div class="stat-label">Bildirishnomalar</div>
+            </div>
+        </div>
+
+        <div class="connection-status disconnected" id="connectionStatus">
+            <div class="status-indicator"></div>
+            <span>WebSocket ulanmagan</span>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-primary" id="connectBtn">WebSocket Ulanish</button>
+            <button class="btn btn-secondary" id="disconnectBtn" disabled>WebSocket Uzish</button>
+            <button class="btn btn-success" id="loadProductsBtn">
+                <span id="loadProductsText">Barcha Mahsulotlarni Yuklash</span>
+                <span id="loadProductsSpinner" class="loading" style="display: none;"></span>
+            </button>
+            <button class="btn btn-secondary" id="clearBtn">Tozalash</button>
+        </div>
+
+        <div class="dashboard">
+            <div class="card">
+                <h2>Tizim Holati</h2>
+                <div class="status-container">
+                    <div class="status-item">
+                        <input type="checkbox" class="status-checkbox" id="ulanishCheckbox" disabled>
+                        <label for="ulanishCheckbox" class="status-label">WebSocket Ulanish</label>
+                    </div>
+                    <div class="status-item">
+                        <input type="checkbox" class="status-checkbox" id="uzishCheckbox" checked disabled>
+                        <label for="uzishCheckbox" class="status-label disconnected">WebSocket Uzish</label>
+                    </div>
+                    <div class="status-item">
+                        <input type="checkbox" class="status-checkbox" id="connectedCheckbox" disabled>
+                        <label for="connectedCheckbox" class="status-label">Ma'lumotlar Oqimi</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Real-time Bildirishnomalar</h2>
+                <div class="notifications" id="notificationsContainer">
+                    <!-- WebSocket xabarlari shu yerda ko'rinadi -->
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="products-header">
+                <h2>Mahsulotlar Ro'yxati</h2>
+                <div class="products-count" id="productsCount">0 mahsulot</div>
+            </div>
+            <div class="products-container">
+                <div class="products-grid" id="productsGrid">
+                    <!-- Mahsulotlar shu yerda ko'rinadi -->
+                    <div class="empty-state" id="emptyState">
+                        <i>📦</i>
+                        <h3>Hozircha mahsulotlar mavjud emas</h3>
+                        <p>"Barcha Mahsulotlarni Yuklash" tugmasini bosing yoki WebSocket orqali yangi ma'lumotlar
+                            kutilmoqda...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2024 Real-time Mahsulotlar Tizimi | WebSocket orqali real vaqtda yangilanish</p>
+            <p style="margin-top: 10px; font-size: 0.85rem;">Go Backend + PostgreSQL + WebSocket</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const connectionStatus = document.getElementById('connectionStatus');
+            const notificationsContainer = document.getElementById('notificationsContainer');
+            const productsGrid = document.getElementById('productsGrid');
+            const emptyState = document.getElementById('emptyState');
+            const ulanishCheckbox = document.getElementById('ulanishCheckbox');
+            const uzishCheckbox = document.getElementById('uzishCheckbox');
+            const connectedCheckbox = document.getElementById('connectedCheckbox');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            const loadProductsBtn = document.getElementById('loadProductsBtn');
+            const loadProductsText = document.getElementById('loadProductsText');
+            const loadProductsSpinner = document.getElementById('loadProductsSpinner');
+            const clearBtn = document.getElementById('clearBtn');
+            const totalProducts = document.getElementById('totalProducts');
+            const activeConnections = document.getElementById('activeConnections');
+            const totalNotifications = document.getElementById('totalNotifications');
+            const productsCount = document.getElementById('productsCount');
+
+            let ws;
+            let reconnectAttempts = 0;
+            const maxReconnectAttempts = 5;
+            let products = [];
+            let notificationCount = 0;
+            const API_BASE_URL = 'http://localhost:8080/api/v1';
+
+            // Statistikani yangilash
+            function updateStats() {
+                totalProducts.textContent = products.length;
+                productsCount.textContent = `${products.length} mahsulot`;
+                totalNotifications.textContent = notificationCount;
+                activeConnections.textContent = ws && ws.readyState === WebSocket.OPEN ? '1' : '0';
+            }
+
+            // WebSocket ulanishini boshlash
+            function connectWebSocket() {
+                const wsUrl = 'ws://localhost:8080/ws';
+
+                try {
+                    connectionStatus.className = 'connection-status connecting';
+                    connectionStatus.innerHTML = '<div class="status-indicator"></div><span>WebSocket ulanmoqda...</span>';
+
+                    ws = new WebSocket(wsUrl);
+
+                    ws.onopen = function (event) {
+                        console.log('✅ WebSocket ulandi');
+                        connectionStatus.className = 'connection-status connected';
+                        connectionStatus.innerHTML = '<div class="status-indicator"></div><span>WebSocket ulandi</span>';
+
+                        // Holatlarni yangilash
+                        ulanishCheckbox.checked = true;
+                        uzishCheckbox.checked = false;
+                        connectedCheckbox.checked = true;
+
+                        // Tugmalarni yangilash
+                        connectBtn.disabled = true;
+                        disconnectBtn.disabled = false;
+
+                        // Bildirishnoma qo'shish
+                        addNotification('WebSocket muvaffaqiyatli ulandi', 'success');
+
+                        reconnectAttempts = 0;
+                        updateStats();
+                    };
+
+                    ws.onmessage = function (event) {
+                        console.log('📨 WebSocket xabari:', event.data);
+
+                        try {
+                            const message = JSON.parse(event.data);
+                            console.log('🔍 Parsed message:', message);
+
+                            if (message.type === 'product') {
+                                console.log('✅ Product xabari qabul qilindi');
+                                handleProductMessage(message);
+                            } else {
+                                console.log('ℹ️ Boshqa turdagi xabar:', message.type);
+                                addNotification(`Yangi xabar: ${message.type}`, 'info');
+                            }
+                        } catch (error) {
+                            console.error('❌ Xabarni tahlil qilishda xatolik:', error);
+                            addNotification('Xabarni o\'qishda xatolik', 'error');
+                        }
+                    };
+
+                    ws.onclose = function (event) {
+                        console.log('🔴 WebSocket uzildi. Kod:', event.code, 'Sabab:', event.reason);
+                        connectionStatus.className = 'connection-status disconnected';
+                        connectionStatus.innerHTML = '<div class="status-indicator"></div><span>WebSocket uzildi</span>';
+
+                        // Holatlarni yangilash
+                        ulanishCheckbox.checked = false;
+                        uzishCheckbox.checked = true;
+                        connectedCheckbox.checked = false;
+
+                        // Tugmalarni yangilash
+                        connectBtn.disabled = false;
+                        disconnectBtn.disabled = true;
+
+                        // Bildirishnoma qo'shish
+                        if (event.code === 1000) {
+                            addNotification('WebSocket normal uzildi', 'info');
+                        } else {
+                            addNotification(`WebSocket uzildi (kod: ${event.code})`, 'error');
+                        }
+
+                        updateStats();
+
+                        // Qayta ulanish
+                        if (reconnectAttempts < maxReconnectAttempts) {
+                            reconnectAttempts++;
+                            const delay = Math.min(3000 * reconnectAttempts, 15000);
+                            console.log(`🔄 ${delay}ms dan keyin qayta ulanmoqda... (${reconnectAttempts}/${maxReconnectAttempts})`);
+
+                            setTimeout(function () {
+                                console.log(`🔄 WebSocket qayta ulanmoqda... (${reconnectAttempts}/${maxReconnectAttempts})`);
+                                addNotification(`WebSocket qayta ulanmoqda... (${reconnectAttempts}/${maxReconnectAttempts})`, 'warning');
+                                connectWebSocket();
+                            }, delay);
+                        }
+                    };
+
+                    ws.onerror = function (error) {
+                        console.error('💥 WebSocket xatosi:', error);
+                        connectionStatus.className = 'connection-status disconnected';
+                        connectionStatus.innerHTML = '<div class="status-indicator"></div><span>WebSocket xatosi</span>';
+                        addNotification('WebSocket ulanishida xatolik', 'error');
+                    };
+
+                } catch (error) {
+                    console.error('❌ WebSocket ulanishida xatolik:', error);
+                    addNotification('WebSocket ulanishida xatolik: ' + error.message, 'error');
+                }
+            }
+
+            // WebSocket uzish (graceful)
+            function disconnectWebSocket() {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    // Graceful close
+                    ws.close(1000, "Normal closure");
+                }
+            }
+
+            // Barcha mahsulotlarni API orqali yuklash
+            async function loadAllProducts() {
+                try {
+                    // Loading holatini ko'rsatish
+                    loadProductsText.textContent = 'Yuklanmoqda...';
+                    loadProductsSpinner.style.display = 'inline-block';
+                    loadProductsBtn.disabled = true;
+
+                    console.log('📡 API dan mahsulotlar yuklanmoqda...');
+
+                    const response = await fetch(`${API_BASE_URL}/products/all`);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP xatosi! Status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    console.log('✅ API javobi:', result);
+
+                    // Mahsulotlarni saqlash va ko'rsatish
+                    if (result.success && result.data && Array.isArray(result.data.products)) {
+                        // Avval barcha mahsulotlarni tozalash
+                        productsGrid.innerHTML = '';
+                        products = [];
+
+                        // Yangi mahsulotlarni qo'shish
+                        result.data.products.forEach(product => {
+                            addProductCard(product);
+                        });
+
+                        addNotification(`Barcha mahsulotlar yuklandi (${result.data.products.length} ta)`, 'success');
+                    } else if (result.data && Array.isArray(result.data)) {
+                        // Agar mahsulotlar to'g'ridan-to'g'ri data ichida bo'lsa
+                        productsGrid.innerHTML = '';
+                        products = [];
+
+                        result.data.forEach(product => {
+                            addProductCard(product);
+                        });
+
+                        addNotification(`Barcha mahsulotlar yuklandi (${result.data.length} ta)`, 'success');
+                    } else {
+                        throw new Error('Mahsulotlar formati noto\'g\'ri');
+                    }
+
+                } catch (error) {
+                    console.error('❌ Mahsulotlarni yuklashda xatolik:', error);
+                    addNotification(`Mahsulotlarni yuklashda xatolik: ${error.message}`, 'error');
+                } finally {
+                    // Loading holatini yashirish
+                    loadProductsText.textContent = 'Barcha Mahsulotlarni Yuklash';
+                    loadProductsSpinner.style.display = 'none';
+                    loadProductsBtn.disabled = false;
+                }
+            }
+            // Tozalash
+            function clearAll() {
+                productsGrid.innerHTML = '';
+                products = [];
+                emptyState.style.display = 'block';
+                updateStats();
+                addNotification('Barcha mahsulotlar tozalandi', 'info');
+            }
+
+            // Sahifa yopilayotganda WebSocket ni to'g'ri yopish
+            window.addEventListener('beforeunload', function () {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.close(1000, "Page unloading");
+                }
+            });
+
+            // Bildirishnoma qo'shish
+            function addNotification(message, type = 'info') {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('en-US', { hour12: true });
+
+                const notificationItem = document.createElement('div');
+                notificationItem.className = `notification-item ${type}`;
+                notificationItem.innerHTML = `<strong>${timeString}</strong> - ${message}`;
+
+                notificationsContainer.prepend(notificationItem);
+                notificationCount++;
+                updateStats();
+
+                // Eng yangi 20 ta bildirishnomani saqlash
+                if (notificationsContainer.children.length > 20) {
+                    notificationsContainer.removeChild(notificationsContainer.lastChild);
+                }
+            }
+
+            // Mahsulot xabarini qayta ishlash
+            function handleProductMessage(message) {
+                const { action, data } = message;
+                console.log('🛍️ Product action:', action, data);
+
+                if (action === 'created') {
+                    addProductCard(data, 'new');
+                    addNotification(`✅ Yangi mahsulot qo'shildi: "${data.name}"`, 'success');
+                } else if (action === 'updated') {
+                    updateProductCard(data);
+                    addNotification(`🔄 Mahsulot yangilandi: "${data.name}"`, 'info');
+                } else if (action === 'deleted') {
+                    removeProductCard(data.id);
+                    addNotification(`🗑️ Mahsulot o'chirildi: "${data.name}"`, 'error');
+                }
+            }
+
+            // Mahsulot kartasini qo'shish
+            function addProductCard(product, type = '') {
+                console.log(product, type);
+
+                // Bo'sh holatni yashirish
+                if (emptyState.style.display !== 'none') {
+                    emptyState.style.display = 'none';
+                }
+
+                // Agar mahsulot allaqachon mavjud bo'lsa, yangilash
+                const existingIndex = products.findIndex(p => p.id === product.id);
+                if (existingIndex !== -1) {
+                    products[existingIndex] = product;
+                    updateProductCard(product);
+                    return;
+                }
+
+                // Yangi mahsulot qo'shish
+                products.push(product);
+
+                const productCard = document.createElement('div');
+                productCard.className = `product-card ${type}`;
+                productCard.id = `product-${product.id}`;
+
+                const createdAt = new Date(product.created_at).toLocaleDateString('uz-UZ');
+                const updatedAt = new Date(product.updated_at).toLocaleDateString('uz-UZ');
+
+                // Status badge
+                const statusText = type === 'new' ? 'YANGI' : type === 'updated' ? 'YANGILANDI' : '';
+                const statusClass = type === 'new' ? 'status-new' : type === 'updated' ? 'status-updated' : '';
+
+                productCard.innerHTML = `
+                    ${statusText ? `<div class="product-status ${statusClass}">${statusText}</div>` : ''}
+                    <div class="product-header">
+                        <div class="product-name">${escapeHtml(product.name)}</div>
+                        <div class="product-price">$${product.price.toFixed(2)}</div>
+                    </div>
+                    <div class="product-description">${escapeHtml(product.description || 'Tavsif mavjud emas')}</div>
+                    <div class="product-details">
+                        <div class="product-quantity">📦 Qoldiq: ${product.quantity} ta</div>
+                        <div class="product-category">${escapeHtml(product.category_id || 'Kategoriya')}</div>
+                    </div>
+                    <div class="product-meta">
+                        <span>ID: ${product.id.substring(0, 8)}...</span>
+                        <span>Yaratilgan: ${createdAt}</span>
+                    </div>
+                `;
+
+                productsGrid.prepend(productCard);
+                updateStats();
+
+                // Yangi qo'shilgan mahsulotni animatsiya bilan ajratib ko'rsatish
+                if (type === 'new') {
+                    setTimeout(() => {
+                        productCard.classList.remove('new');
+                        const statusBadge = productCard.querySelector('.product-status');
+                        if (statusBadge) {
+                            statusBadge.remove();
+                        }
+                    }, 3000);
+                }
+            }
+
+            // Mahsulot kartasini yangilash
+            function updateProductCard(product) {
+                const existingCard = document.getElementById(`product-${product.id}`);
+
+                if (existingCard) {
+                    existingCard.classList.add('updated');
+
+                    const createdAt = new Date(product.created_at).toLocaleDateString('uz-UZ');
+                    const updatedAt = new Date(product.updated_at).toLocaleDateString('uz-UZ');
+
+                    existingCard.innerHTML = `
+                        <div class="product-status status-updated">YANGILANDI</div>
+                        <div class="product-header">
+                            <div class="product-name">${escapeHtml(product.name)}</div>
+                            <div class="product-price">$${product.price.toFixed(2)}</div>
+                        </div>
+                        <div class="product-description">${escapeHtml(product.description || 'Tavsif mavjud emas')}</div>
+                        <div class="product-details">
+                            <div class="product-quantity">📦 Qoldiq: ${product.quantity} ta</div>
+                            <div class="product-category">${escapeHtml(product.category_id || 'Kategoriya')}</div>
+                        </div>
+                        <div class="product-meta">
+                            <span>ID: ${product.id.substring(0, 8)}...</span>
+                            <span>Yangilangan: ${updatedAt}</span>
+                        </div>
+                    `;
+
+                    setTimeout(() => {
+                        existingCard.classList.remove('updated');
+                        const statusBadge = existingCard.querySelector('.product-status');
+                        if (statusBadge) {
+                            statusBadge.remove();
+                        }
+                    }, 3000);
+                } else {
+                    // Agar mahsulot topilmasa, yangi kartani qo'shish
+                    addProductCard(product);
+                }
+
+                // Mahsulotlar ro'yxatini yangilash
+                const existingIndex = products.findIndex(p => p.id === product.id);
+                if (existingIndex !== -1) {
+                    products[existingIndex] = product;
+                }
+            }
+
+            // Mahsulot kartasini o'chirish
+            function removeProductCard(productId) {
+                const productCard = document.getElementById(`product-${productId}`);
+
+                if (productCard) {
+                    productCard.classList.add('deleted');
+
+                    setTimeout(() => {
+                        productCard.remove();
+
+                        // Mahsulotlar ro'yxatidan o'chirish
+                        products = products.filter(p => p.id !== productId);
+                        updateStats();
+
+                        // Agar mahsulot qolmagan bo'lsa, bo'sh holatni ko'rsatish
+                        if (productsGrid.children.length === 0) {
+                            emptyState.style.display = 'block';
+                        }
+                    }, 1000);
+                }
+            }
+
+            // HTML escape qilish
+            function escapeHtml(unsafe) {
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            // Tugmalarga event listener qo'shish
+            connectBtn.addEventListener('click', connectWebSocket);
+            disconnectBtn.addEventListener('click', disconnectWebSocket);
+            loadProductsBtn.addEventListener('click', loadAllProducts);
+            clearBtn.addEventListener('click', clearAll);
+
+            // Statistikani yangilash
+            updateStats();
+
+            // Avtomatik WebSocket ulanish
+            connectWebSocket();
+        });
+    </script>
+</body>
+
+</html>
